@@ -82,7 +82,7 @@ final class KeyEngine {
         }
 
         // 키 매핑
-        if !bypassRemaps, let r = config.remaps.first(where: { $0.from == keyCode }) {
+        if !bypassRemaps, let r = config.activeRemaps.first(where: { $0.from == keyCode }) {
             log("매핑 → \(KeyNames.name(r.to))")
             if r.to == toggleInputSource {
                 if isDown && !isRepeat { InputSource.toggle() }

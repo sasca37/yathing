@@ -42,6 +42,14 @@ struct Hotkey: Codable, Identifiable, Equatable {
 struct Config: Codable, Equatable {
     var remaps: [Remap]
     var hotkeys: [Hotkey]
+    /// 윈도우 키보드 모드: Alt↔Win 자리를 바꾸고, 오른쪽 Alt(한/영 키)를 우측 ⌘처럼 쓴다.
+    var windowsKeyboard = false
+
+    /// 실제로 적용할 매핑. 윈도우 키보드 모드에선 오른쪽 Alt가 우측 ⌘ 매핑을 따른다.
+    var activeRemaps: [Remap] {
+        guard windowsKeyboard, !remaps.contains(where: { $0.from == 61 }) else { return remaps }
+        return remaps + [Remap(from: 61, to: remaps.first { $0.from == 54 }?.to ?? 113)]
+    }
 
     static let `default`: Config = {
         let mods = CGEventFlags([.maskControl, .maskAlternate]).rawValue
@@ -70,5 +78,15 @@ struct Config: Codable, Equatable {
         let enc = JSONEncoder()
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         if let data = try? enc.encode(self) { try? data.write(to: Self.fileURL, options: .atomic) }
+    }
+}
+
+extension Config {
+    /// 예전 설정 파일에는 windowsKeyboard 키가 없으므로 기본값으로 읽는다.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        remaps = try c.decode([Remap].self, forKey: .remaps)
+        hotkeys = try c.decode([Hotkey].self, forKey: .hotkeys)
+        windowsKeyboard = try c.decodeIfPresent(Bool.self, forKey: .windowsKeyboard) ?? false
     }
 }

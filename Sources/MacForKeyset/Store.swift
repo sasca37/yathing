@@ -9,7 +9,7 @@ final class Store: ObservableObject {
         didSet {
             config.save()
             KeyEngine.shared.config = config
-            if !rawMode { HIDRemap.apply(config.remaps) }
+            if !rawMode { HIDRemap.apply(config) }
         }
     }
     @Published var engineRunning = false
@@ -22,7 +22,7 @@ final class Store: ObservableObject {
     @Published var rawMode = false {
         didSet {
             KeyEngine.shared.bypassRemaps = rawMode
-            if rawMode { HIDRemap.reset() } else { HIDRemap.apply(config.remaps) }
+            if rawMode { HIDRemap.reset() } else { HIDRemap.apply(config) }
         }
     }
 
@@ -33,7 +33,7 @@ final class Store: ObservableObject {
 
     /// 권한을 요청하고, 권한이 생길 때까지 2초마다 이벤트 탭 생성을 재시도한다.
     func bootstrap() {
-        HIDRemap.apply(config.remaps)
+        HIDRemap.apply(config)
         _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
         _ = CGRequestListenEventAccess()
         refresh()

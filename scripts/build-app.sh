@@ -1,21 +1,25 @@
 #!/bin/bash
-# Builds build/MacForKeyset.app.
+# Builds build/yathing.app.
 # 서명: 빌드마다 권한(손쉬운 사용/입력 모니터링)이 초기화되지 않도록 고정 인증서를 쓴다.
 # SIGN_IDENTITY 환경변수로 지정하지 않으면 첫 번째 코드서명 인증서를, 없으면 ad-hoc(+고정 identifier)을 쓴다.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 swift build -c release
-APP=build/MacForKeyset.app
+APP=build/yathing.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
 cp .build/release/MacForKeyset "$APP/Contents/MacOS/MacForKeyset"
+mkdir -p "$APP/Contents/Resources"
+cp Resources/AppIcon.icns Resources/MenuBarIcon.png Resources/MenuBarIcon@2x.png "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>com.sasca37.macforkeyset</string>
-  <key>CFBundleName</key><string>MacForKeyset</string>
+  <key>CFBundleName</key><string>yathing</string>
+  <key>CFBundleDisplayName</key><string>yathing</string>
   <key>CFBundleExecutable</key><string>MacForKeyset</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>CFBundleShortVersionString</key><string>0.1</string>

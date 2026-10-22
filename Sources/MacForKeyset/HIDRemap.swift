@@ -11,11 +11,19 @@ enum HIDRemap {
     ]
     private static var applied = false
 
-    static func apply(_ remaps: [Remap]) {
+    static func apply(_ config: Config) {
         let page: UInt64 = 0x7_0000_0000
-        let entries = remaps.compactMap { r -> [String: UInt64]? in
+        var pairs = config.activeRemaps.compactMap { r -> (UInt64, UInt64)? in
             guard let src = modifierUsage[r.from], let dst = fKeyUsage[r.to] else { return nil }
-            return ["HIDKeyboardModifierMappingSrc": page | src, "HIDKeyboardModifierMappingDst": page | dst]
+            return (src, dst)
+        }
+        if config.windowsKeyboard {
+            // 윈도우 키보드: Alt 자리(Left ⌥) → ⌘, Win 자리(Left ⌘) → ⌥. 사용자 매핑이 있는 키는 건드리지 않는다.
+            let used = Set(pairs.map { $0.0 })
+            pairs += [(0xE2, 0xE3), (0xE3, 0xE2)].filter { !used.contains($0.0) }
+        }
+        let entries = pairs.map {
+            ["HIDKeyboardModifierMappingSrc": page | $0.0, "HIDKeyboardModifierMappingDst": page | $0.1]
         }
         if entries.isEmpty && !applied { return }
         applied = true
@@ -29,5 +37,5 @@ enum HIDRemap {
         p.waitUntilExit()
     }
 
-    static func reset() { if applied { apply([]) } }
+    static func reset() { if applied { apply(Config(remaps: [], hotkeys: [])) } }
 }
