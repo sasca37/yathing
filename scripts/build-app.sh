@@ -4,18 +4,21 @@
 # SIGN_IDENTITY 환경변수로 지정하지 않으면 첫 번째 코드서명 인증서를, 없으면 ad-hoc(+고정 identifier)을 쓴다.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-swift build -c release
+# 유니버설 (Apple Silicon + Intel). 출력 경로는 Xcode 버전마다 달라서 SwiftPM에게 묻는다.
+ARCHS=(--arch arm64 --arch x86_64)
+swift build -c release "${ARCHS[@]}"
+BIN="$(swift build -c release "${ARCHS[@]}" --show-bin-path)"
 APP=build/yathing.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
-cp .build/release/MacForKeyset "$APP/Contents/MacOS/MacForKeyset"
+cp "$BIN/MacForKeyset" "$APP/Contents/MacOS/MacForKeyset"
 mkdir -p "$APP/Contents/Resources"
 cp Resources/AppIcon.icns Resources/MenuBarIcon.png Resources/MenuBarIcon@2x.png "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>CFBundleIdentifier</key><string>com.sasca37.macforkeyset</string>
+  <key>CFBundleIdentifier</key><string>com.sasca37.yathing</string>
   <key>CFBundleName</key><string>yathing</string>
   <key>CFBundleDisplayName</key><string>yathing</string>
   <key>CFBundleExecutable</key><string>MacForKeyset</string>
@@ -31,6 +34,6 @@ IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning | awk 'NR=
 if [ -n "$IDENTITY" ]; then
   codesign --force --sign "$IDENTITY" "$APP"
 else
-  codesign --force --sign - -r='designated => identifier "com.sasca37.macforkeyset"' "$APP"
+  codesign --force --sign - -r='designated => identifier "com.sasca37.yathing"' "$APP"
 fi
 echo "Built $APP"

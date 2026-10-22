@@ -75,6 +75,12 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 520, height: 680)
+        // 입력 대기 중에 창을 닫으면 이벤트 탭이 모든 키를 계속 삼키므로 대기를 풀어 준다.
+        .onDisappear {
+            store.cancelCapture()
+            addingRemap = false
+            recordingAction = nil
+        }
     }
 
     // MARK: remap flow

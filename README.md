@@ -38,14 +38,13 @@ open build/yathing.app
 
 문제 해결:
 - 허용했는데 "필요"로 남으면, 목록에서 항목을 삭제(−)하고 앱을 재실행해 다시 허용하세요.
-  이전 서명으로 등록된 무효 항목일 수 있습니다. 터미널에서는 `tccutil reset Accessibility com.sasca37.macforkeyset`.
+  이전 서명으로 등록된 무효 항목일 수 있습니다. 터미널에서는 `tccutil reset Accessibility com.sasca37.yathing`.
 - 권한을 바꾼 뒤에는 앱을 종료하고 다시 실행하세요.
 
 ## 설정과 동작 참고
 
 - 설정 파일: `~/Library/Application Support/MacForKeyset/config.json`
-- 앱 이름은 yathing이지만 번들 ID(`com.sasca37.macforkeyset`)와 설정 폴더, 소스 타깃 이름은 예전 이름을 그대로 씁니다.
-  바꾸면 권한과 설정이 초기화되기 때문입니다.
+- 번들 ID는 `com.sasca37.yathing`입니다. 설정 폴더와 소스 타깃 이름은 예전 이름(MacForKeyset)을 그대로 씁니다.
 - modifier 매핑은 `hidutil property --set`으로 적용되며 재부팅하면 사라집니다. 앱 실행 때마다 다시 적용하고, 종료하면 해제합니다.
   `hidutil`은 `UserKeyMapping` 전체를 덮어쓰므로 다른 도구의 hidutil 매핑과 충돌합니다.
 - 키 이벤트는 이벤트 뷰어 창이 열려 있을 때만 메모리에 기록하고(최대 300개), 디스크나 네트워크로 보내지 않습니다.

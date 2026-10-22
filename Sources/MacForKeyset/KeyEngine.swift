@@ -76,7 +76,8 @@ final class KeyEngine {
             }) {
                 swallowedKeyUps.insert(keyCode)
                 log("창 분할: \(hk.action.title)")
-                if !isRepeat { WindowManager.apply(hk.action) }
+                // AX 호출은 대상 앱이 멈추면 오래 걸리므로 탭 콜백 밖에서 실행한다 (탭 타임아웃 방지).
+                if !isRepeat { DispatchQueue.main.async { WindowManager.apply(hk.action) } }
                 return nil
             }
         }
