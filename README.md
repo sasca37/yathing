@@ -1,6 +1,19 @@
 # yathing
 
-macOS 메뉴바 앱. 키 매핑(특히 우측 ⌘ 한영 전환)과 단축키 기반 창 분할을 제공합니다.
+윈도우 키보드를 맥에서 편하게 쓰게 해 주는 macOS 메뉴바 앱입니다.
+메뉴에서 한 번 고르면 Ctrl+C 복사, Alt+Tab 앱 전환, 한/영 키 전환을 윈도우처럼 쓸 수 있습니다.
+키 매핑(우측 ⌘ 한영 전환)과 단축키 창 분할도 제공합니다.
+
+## 설치
+
+1. [Releases](https://github.com/sasca37/yathing/releases/latest)에서 `yathing-<버전>.dmg`를 받습니다.
+2. DMG를 열고 `yathing`을 `Applications` 폴더로 끌어다 놓습니다.
+3. 응용 프로그램에서 yathing을 실행하고, 아래 [권한](#권한) 두 가지를 허용한 뒤 앱을 다시 실행합니다.
+4. 메뉴바의 yathing 아이콘 → 키보드 모드를 고릅니다.
+
+요구사항: macOS 13 이상 (Apple Silicon, Intel 모두 지원)
+
+키 입력은 이 Mac 안에서만 처리하며, 디스크에 저장하거나 네트워크로 보내지 않습니다. 소스 코드는 이 저장소에 모두 공개되어 있습니다.
 
 ## 기능
 
@@ -29,8 +42,8 @@ macOS 메뉴바 앱. 키 매핑(특히 우측 ⌘ 한영 전환)과 단축키 �
 open build/yathing.app
 ```
 
-서명은 이 Mac의 첫 코드서명 인증서를 씁니다. `SIGN_IDENTITY`로 지정할 수 있고, 인증서가 없으면 ad-hoc 서명입니다.
-서명이 빌드마다 바뀌면 권한이 초기화되므로 인증서 서명을 권장합니다.
+서명은 Developer ID Application 인증서 → 이 Mac의 첫 코드서명 인증서 → ad-hoc 순으로 고릅니다. `SIGN_IDENTITY`로 지정할 수 있습니다.
+서명이 빌드마다 바뀌면 권한이 초기화되므로 인증서 서명을 권장합니다. 버전은 `VERSION=1.0.0`으로 지정합니다(기본 0.1.0).
 
 ## 권한
 
@@ -66,6 +79,31 @@ open build/yathing.app
 - Caps Lock은 modifier 처리 방식이 달라 매핑 대상으로 불확실합니다.
 - 자동 테스트는 없습니다. 이벤트 탭과 Accessibility는 권한이 필요한 시스템 동작이라 수동으로 확인합니다.
 
+## 배포 (관리자용)
+
+공증된 DMG를 만들어 GitHub Releases에 올립니다.
+
+처음 한 번 준비:
+1. [Apple Developer Program](https://developer.apple.com/programs/) 가입 (연 $99).
+2. Xcode → Settings → Accounts → Manage Certificates → `+` → **Developer ID Application** 인증서 생성.
+   `security find-identity -v -p codesigning`에 `Developer ID Application: ...`이 보이면 됩니다.
+3. [appleid.apple.com](https://appleid.apple.com)에서 앱 암호를 만들고, 공증 자격 증명을 키체인에 저장합니다.
+   ```
+   xcrun notarytool store-credentials yathing-notary --apple-id <Apple ID 이메일> --team-id <팀 ID>
+   ```
+
+릴리스할 때마다:
+```
+VERSION=1.0.0 ./scripts/release.sh   # 빌드 → DMG → 서명 → 공증 → staple, 마지막에 sha256 출력
+git tag v1.0.0 && git push origin main --tags
+```
+GitHub → Releases → Draft a new release에서 태그 `v1.0.0`을 고르고 `build/yathing-1.0.0.dmg`를 첨부합니다.
+출력된 sha256은 Homebrew cask에 씁니다.
+
+## 라이선스
+
+[MIT](LICENSE)
+
 ## 구조
 
 ```
@@ -82,6 +120,7 @@ Sources/MacForKeyset/
   SettingsView.swift   설정 창
   KeyNames.swift       keyCode ↔ 이름
 scripts/build-app.sh   앱 번들 빌드와 서명
+scripts/release.sh     배포용 DMG (서명, 공증, staple)
 Resources/AppIcon.*    앱 아이콘 (원본 1024 PNG와 빌드에 쓰는 .icns)
 Resources/MenuBarIcon* 메뉴바 아이콘 (템플릿 이미지, 18pt/@2x)
 ```
