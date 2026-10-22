@@ -21,6 +21,36 @@ struct SettingsView: View {
                 if let err = store.launchAtLoginError { Text(err).font(.caption).foregroundStyle(.red) }
             }
 
+            Section("키보드 모드") {
+                Picker("", selection: $store.config.keyboardMode) {
+                    ForEach(KeyboardMode.allCases, id: \.self) { mode in
+                        VStack(alignment: .leading) {
+                            Text(mode.title)
+                            Text(mode.example).font(.caption).foregroundStyle(.secondary)
+                        }
+                        .tag(mode)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+                if store.config.keyboardMode == .windowsAsWindows {
+                    DisclosureGroup("이렇게 동작해요") {
+                        Grid(alignment: .leading, verticalSpacing: 4) {
+                            ForEach(WindowsShortcuts.guide, id: \.keys) { row in
+                                GridRow {
+                                    Text(row.keys).font(.system(.body, design: .monospaced))
+                                    Text(row.meaning).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+                if store.config.keyboardMode != .mac {
+                    Text("연결된 모든 키보드(내장 키보드 포함)에 적용돼요. 맥 키보드를 쓸 때는 '맥 키보드'로 바꾸세요.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
             Section("키 매핑") {
                 ForEach(store.config.remaps) { r in
                     HStack {

@@ -36,9 +36,13 @@ private struct MenuContent: View {
     var body: some View {
         Text(store.engineRunning ? "키 처리 동작 중" : "권한 필요 — 설정에서 확인")
         Divider()
+        Picker("키보드 모드", selection: $store.config.keyboardMode) {
+            ForEach(KeyboardMode.allCases, id: \.self) { Text("\($0.title)  —  \($0.example)").tag($0) }
+        }
+        .pickerStyle(.inline)
+        Divider()
         Button("설정…") { show("settings") }
         Button("키 이벤트 보기…") { show("events") }
-        Toggle("윈도우 키보드 설정 (Alt↔Win)", isOn: $store.config.windowsKeyboard)
         Divider()
         Button("종료") { NSApp.terminate(nil) }
     }

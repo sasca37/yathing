@@ -17,11 +17,15 @@ enum HIDRemap {
             guard let src = modifierUsage[r.from], let dst = fKeyUsage[r.to] else { return nil }
             return (src, dst)
         }
-        if config.windowsKeyboard {
-            // 윈도우 키보드: Alt 자리(Left ⌥) → ⌘, Win 자리(Left ⌘) → ⌥. 사용자 매핑이 있는 키는 건드리지 않는다.
-            let used = Set(pairs.map { $0.0 })
-            pairs += [(0xE2, 0xE3), (0xE3, 0xE2)].filter { !used.contains($0.0) }
+        // 키보드 모드별 modifier 교환. 사용자 매핑이 있는 키는 건드리지 않는다.
+        let swaps: [(UInt64, UInt64)]
+        switch config.keyboardMode {
+        case .mac: swaps = []
+        case .windowsAsMac: swaps = [(0xE2, 0xE3), (0xE3, 0xE2)]  // Alt 자리 → ⌘, Win 자리 → ⌥
+        case .windowsAsWindows: swaps = [(0xE0, 0xE3), (0xE3, 0xE0), (0xE4, 0xE3)]  // Ctrl → ⌘, Win → ⌃, 오른쪽 Ctrl → ⌘
         }
+        let used = Set(pairs.map { $0.0 })
+        pairs += swaps.filter { !used.contains($0.0) }
         let entries = pairs.map {
             ["HIDKeyboardModifierMappingSrc": page | $0.0, "HIDKeyboardModifierMappingDst": page | $0.1]
         }

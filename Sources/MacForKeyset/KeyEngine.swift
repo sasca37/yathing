@@ -10,6 +10,10 @@ final class KeyEngine {
     var bypassRemaps = false
     private var tap: CFMachPort?
     private var swallowedKeyUps = Set<Int>()
+    /// 윈도우 단축키로 바꿔 보낸 keyDown. keyUp도 같은 키로 바꿔야 앱에서 키가 눌린 채 남지 않는다.
+    private var translatedKeyUps: [Int: (Int, CGEventFlags)] = [:]
+    /// Alt+Tab 중: Alt를 누르고 있는 동안 ⌘를 대신 눌러 둔 상태 (맥 앱 전환기는 ⌘가 눌려 있어야 유지된다).
+    private var altTabActive = false
     private let marker: Int64 = 0x4B455953
 
     /// flagsChanged 이벤트에서 키별 눌림 여부를 판단하는 device-dependent 마스크.
@@ -41,6 +45,7 @@ final class KeyEngine {
         let pass = Unmanaged.passUnretained(event)
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+            endAltTab()
             return pass
         }
 
@@ -68,6 +73,27 @@ final class KeyEngine {
             return nil
         }
 
+        // Alt+Tab ("윈도우처럼" 모드): ⌘를 대신 눌러 맥 앱 전환기를 띄우고, Alt를 떼면 ⌘도 뗀다.
+        // 그동안 들어오는 키(Tab, Shift, Esc, 방향키)는 ⌥ 대신 ⌘가 눌린 것으로 바꾼다.
+        let altOnly = flags & hotkeyModifierMask & ~CGEventFlags.maskShift.rawValue == CGEventFlags.maskAlternate.rawValue
+        if altTabActive {
+            if isModifier && flags & CGEventFlags.maskAlternate.rawValue == 0 {
+                endAltTab()
+                log("Alt+Tab 끝")
+                return pass
+            }
+            event.flags = event.flags.subtracting(.maskAlternate).union(.maskCommand)
+            log("Alt+Tab")
+            return pass
+        }
+        if isDown, !isModifier, keyCode == 48, altOnly, config.keyboardMode == .windowsAsWindows, !bypassRemaps {
+            altTabActive = true
+            post(55, down: true, flags: .maskCommand)
+            post(48, down: true, flags: event.flags.subtracting(.maskAlternate).union(.maskCommand))
+            log("Alt+Tab → 앱 전환")
+            return nil
+        }
+
         // 창 분할 단축키
         if !isModifier {
             if !isDown, swallowedKeyUps.remove(keyCode) != nil { return nil }
@@ -79,6 +105,28 @@ final class KeyEngine {
                 // AX 호출은 대상 앱이 멈추면 오래 걸리므로 탭 콜백 밖에서 실행한다 (탭 타임아웃 방지).
                 if !isRepeat { DispatchQueue.main.async { WindowManager.apply(hk.action) } }
                 return nil
+            }
+
+            // 윈도우 단축키 ("윈도우처럼" 모드). 사용자 매핑의 대상 키(예: F13)는 건드리지 않는다.
+            if !isDown, let (key, mods) = translatedKeyUps.removeValue(forKey: keyCode) {
+                Self.rewrite(event, keyCode: key, modifiers: mods)
+                return pass
+            }
+            if isDown, config.keyboardMode == .windowsAsWindows, !bypassRemaps,
+               !config.activeRemaps.contains(where: { $0.to == keyCode }),
+               let out = WindowsShortcuts.match(keyCode: keyCode, flags: flags) {
+                switch out {
+                case .key(let key, let mods):
+                    log("윈도우 단축키 → \(KeyNames.modifierSymbols(mods.rawValue))\(KeyNames.name(key))")
+                    translatedKeyUps[keyCode] = (key, mods)
+                    Self.rewrite(event, keyCode: key, modifiers: mods)
+                    return pass
+                case .action(let action):
+                    log("윈도우 단축키")
+                    swallowedKeyUps.insert(keyCode)
+                    if !isRepeat { DispatchQueue.main.async(execute: action) }
+                    return nil
+                }
             }
         }
 
@@ -107,10 +155,26 @@ final class KeyEngine {
         return String(utf16CodeUnits: buf, count: len).filter { !$0.isNewline && !($0.asciiValue.map { $0 < 32 || $0 == 127 } ?? false) }
     }
 
-    private func post(_ keyCode: Int, down: Bool) {
+    /// 이벤트의 키와 modifier를 바꾼다. Caps Lock 상태는 유지하고, 방향키 등에 맞는 fn/numpad 플래그를 붙인다.
+    private static func rewrite(_ event: CGEvent, keyCode: Int, modifiers: CGEventFlags) {
+        var flags = modifiers.union(event.flags.intersection(.maskAlphaShift))
+        if (123...126).contains(keyCode) { flags.formUnion([.maskNumericPad, .maskSecondaryFn]) }
+        if [103, 115, 117, 119].contains(keyCode) { flags.insert(.maskSecondaryFn) }
+        event.setIntegerValueField(.keyboardEventKeycode, value: Int64(keyCode))
+        event.flags = flags
+    }
+
+    private func endAltTab() {
+        guard altTabActive else { return }
+        altTabActive = false
+        post(55, down: false)
+    }
+
+    private func post(_ keyCode: Int, down: Bool, flags: CGEventFlags = []) {
         guard let e = CGEvent(keyboardEventSource: CGEventSource(stateID: .privateState),
                               virtualKey: CGKeyCode(keyCode), keyDown: down) else { return }
-        e.flags = []
+        if keyCode == 55 { e.type = .flagsChanged }
+        e.flags = flags
         e.setIntegerValueField(.eventSourceUserData, value: marker)
         e.post(tap: .cghidEventTap)
     }
