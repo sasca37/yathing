@@ -66,6 +66,14 @@ Shift를 같이 누르면 선택하면서 이동합니다 (예: Shift+Home → �
 
 ## 설치
 
+**Homebrew**
+
+```
+brew install --cask sasca37/tap/yathing
+```
+
+**직접 설치**
+
 1. [최신 버전](https://github.com/sasca37/yathing/releases/latest)에서 `yathing-<버전>.dmg`를 받습니다.
 2. DMG를 열고 **yathing**을 **Applications** 폴더로 끌어다 놓습니다.
 3. 응용 프로그램에서 yathing을 실행합니다. 메뉴바에 고양이 아이콘이 생깁니다.
