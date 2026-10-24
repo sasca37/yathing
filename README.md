@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sasca37/yathing/releases/latest"><img src="https://img.shields.io/github/v/release/sasca37/yathing?label=다운로드" alt="최신 버전"></a>
+  <a href="https://github.com/sasca37/yathing/releases/latest"><img src="https://img.shields.io/github/v/release/sasca37/yathing?label=%EB%8B%A4%EC%9A%B4%EB%A1%9C%EB%93%9C" alt="최신 버전"></a>
   <img src="https://img.shields.io/badge/macOS-13%2B-blue" alt="macOS 13+">
   <img src="https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-지원-brightgreen" alt="Apple Silicon + Intel">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT"></a>
