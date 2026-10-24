@@ -11,8 +11,9 @@ struct SettingsView: View {
                 LabeledContent("손쉬운 사용", value: store.accessibilityGranted ? "허용됨" : "필요")
                 LabeledContent("입력 모니터링", value: store.inputMonitoringGranted ? "허용됨" : "필요")
                 LabeledContent("키 처리 엔진", value: store.engineRunning ? "동작 중" : "중지 (입력 모니터링 권한 확인)")
-                Button("시스템 설정 열기") {
-                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy")!)
+                HStack {
+                    Button("손쉬운 사용 열기") { NSWorkspace.shared.open(SetupWindow.accessibilityURL) }
+                    Button("입력 모니터링 열기") { NSWorkspace.shared.open(SetupWindow.inputMonitoringURL) }
                 }
             }
 

@@ -37,13 +37,18 @@ final class Store: ObservableObject {
         _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
         _ = CGRequestListenEventAccess()
         refresh()
+        if !ready { SetupWindow.show() }
         Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in self?.refresh() }
     }
+
+    /// 입력 모니터링 확인 API는 엔진이 이미 동작 중이어도 false를 줄 수 있어서, 엔진이 실제로 도는지를 기준으로 한다.
+    private var ready: Bool { accessibilityGranted && engineRunning }
 
     private func refresh() {
         accessibilityGranted = AXIsProcessTrusted()
         inputMonitoringGranted = CGPreflightListenEventAccess()
         engineRunning = KeyEngine.shared.start()
+        if ready { SetupWindow.close() }
     }
 
     func setLaunchAtLogin(_ on: Bool) {
